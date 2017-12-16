@@ -3,8 +3,191 @@
 <head>
     <meta charset="UTF-8">
     <title>Title</title>
+    <script src="js/d3.v4.js"></script>
+    <script src="js/d3.multi.selection.js"></script>
+    <style>
+        svg {
+            width: 500px;
+            height: 500px;
+            border: 1px solid #333333;
+        }
+
+        text {
+            fill: black;
+            font-size: 16px;
+        }
+
+        input {
+            width: 50px;
+        }
+
+        button {
+            width: 80px;
+        }
+
+    </style>
 </head>
 <body>
-hi
+<button class="add-button">增加一个</button>
+<div class="controller"></div>
+<svg class="svg"></svg>
+
+<script>
+
+    var controller = d3.select('.controller');
+    var index = 0;
+    var svg = d3.select('svg');
+
+    var layer = svg.append('g')
+        .attrs({
+            transform: 'translate(250,250)'
+        });
+
+    d3.select('.add-button')
+        .on('click', function () {
+            var control = controller.append('div').attr('id', 'control' + index);
+            layer.append('path')
+                .attr('id', 'path' + index);
+            control.append('label')
+                .html('外齿轮齿数：')
+                .append('input')
+                .attr('type', 'number')
+                .attr('class', 'n1')
+                .attr('value', 96);
+            control.append('label')
+                .html('内齿轮齿数：')
+                .append('input')
+                .attr('type', 'number')
+                .attr('class', 'n2')
+                .attr('value', 64);
+            control.append('label')
+                .html('颜色：')
+                .append('input')
+                .attr('type', 'color')
+                .attr('class', 'color')
+                .attr('value', '#4983B2');
+            control.append('label')
+                .html('选点与小齿轮圆心距离比例(0-1)：')
+                .append('input')
+                .attr('class', 'ratio')
+                .attr('type', 'number')
+                .attr('step', '0.1')
+                .attr('value', 1);
+            control.append('button')
+                .attr('index', index)
+                .on('click', function () {
+                    var n1 = control.select('.n1').property('value');
+                    var n2 = control.select('.n2').property('value');
+                    var ratio = control.select('.ratio').property('value');
+                    var color = control.select('.color').property('value');
+                    var index = d3.select(this).attr('index');
+
+                    if (!(n1 && n2 && ratio)) {
+                        alert('请输入必须的参数');
+                    } else {
+                        addCurve(n1, n2, ratio, color, index);
+                    }
+                })
+                .html('go!');
+            control.append('button')
+                .attr('index', index)
+                .html('hidden')
+                .on('click', function () {
+                    var index = d3.select(this).attr('index');
+                    layer.select('#path' + index)
+                        .style('visibility', 'hidden');
+                });
+            index += 1;
+        });
+
+    d3.select('.add-button').node().click();
+
+    var d = 8;
+    var pi = Math.PI;
+    var sin = Math.sin;
+    var cos = Math.cos;
+
+    function addCurve(n1, n2, ratio, color, index) {
+        function getAngel(sinValue, cosValue) {
+            if (sinValue > 0) {
+                //一二象限
+                return Math.acos(cosValue);
+            } else {
+                //三四象限
+                return 2 * pi - Math.acos(cosValue);
+            }
+        }
+
+        function a1(k) {
+            return k / n1 * 2 * pi;
+        }
+
+        function a2(k) {
+            return k / n2 * 2 * pi;
+        }
+
+        function a3(k) {
+            var sinValue = (x1(k) - x2(k)) / r2;
+            var cosValue = (y1(k) - y2(k)) / r2;
+            return getAngel(sinValue, cosValue);
+        }
+
+        function x(k) {
+            return x2(k) + ratio * r2 * cos(a2(k) - a3(k));
+        }
+
+        function y(k) {
+            return y2(k) + ratio * r2 * sin(a2(k) - a3(k));
+        }
+
+        function x1(k) {
+            return r1 * sin(a1(k));
+        }
+
+        function y1(k) {
+            return r1 * cos(a1(k));
+        }
+
+        function x2(k) {
+            return (r1 - r2) * sin(a1(k));
+        }
+
+        function y2(k) {
+            return (r1 - r2) * cos(a1(k));
+        }
+
+        var r1 = n1 / (2 * pi) * d;
+        var r2 = n2 / (2 * pi) * d;
+        var pathData = [];
+
+        for (var i = 0; i < 10000; i += 1) {
+            pathData.push({
+                x: x(i),
+                y: y(i)
+            });
+        }
+
+        layer.select('#path' + index)
+            .attr('class', 'monotoneX')
+            .style('visibility', 'visible')
+            .datum(pathData)
+            .attr('d', d3.line()
+                .curve(d3.curveMonotoneX)
+                .x(function (d) {
+                    return d.x;
+                })
+                .y(function (d) {
+                    return d.y;
+                })
+            )
+            .styles({
+                'stroke': color,
+                'stroke-width': '2px',
+                'fill': 'none'
+            });
+    }
+
+</script>
+
 </body>
 </html>
