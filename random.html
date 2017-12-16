@@ -45,7 +45,8 @@
 
     var controller = d3.select('.controller');
     var index = 0;
-    var candidates = [45, 48, 50, 52, 56, 60, 63, 64, 72, 75, 80, 84, 96, 105];
+    var outCandidates = [96, 105];
+    var candidates = [45, 48, 50, 52, 56, 60, 63, 64, 72, 75, 80, 84];
     var svg = d3.select('svg');
 
     d3.select('.path-button')
@@ -70,7 +71,7 @@
         });
 
     function getConfig() {
-        var n1 = candidates[parseInt(Math.random() * candidates.length)];
+        var n1 = outCandidates[parseInt(Math.random() * outCandidates.length)];
         var n2Candidates = [];
         candidates.forEach(function (t) {
             if (t < n1) {
