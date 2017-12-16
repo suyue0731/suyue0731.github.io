@@ -60,10 +60,12 @@
             var n2List = [];
 
             function getN2() {
-                var n2 = tmpCandidates[parseInt(Math.random() * tmpCandidates.length)];
-                if(n2List.indexOf(n2) < 0) {
-                    n2List.push(n2);
-                    return n2;
+                while (1) {
+                    var n2 = tmpCandidates[parseInt(Math.random() * tmpCandidates.length)];
+                    if(n2List.indexOf(n2) < 0) {
+                        n2List.push(n2);
+                        return n2;
+                    }
                 }
             }
 
