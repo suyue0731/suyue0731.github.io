@@ -55,8 +55,25 @@
             controller.selectAll('*').remove();
             controller.style('visibility', 'hidden');
             layer.selectAll('*').remove();
+            var tmpCandidates = JSON.parse(JSON.stringify(candidates));
+            var n1 = outCandidates[parseInt(Math.random() * outCandidates.length)];
+            var n2List = [];
+
+            function getN2() {
+                var n2 = tmpCandidates[parseInt(Math.random() * tmpCandidates.length)];
+                if(n2List.indexOf(n2) < 0) {
+                    n2List.push(n2);
+                    return n2;
+                }
+            }
+
             for (var i = 0; i < pathCount; i++) {
-                setController();
+                var n2 = getN2();
+                var ratio = parseFloat(Math.random().toFixed(1));
+                if (ratio === 0) {
+                    ratio += 0.1;
+                }
+                setController(n1, n2, ratio);
             }
         });
 
@@ -70,29 +87,8 @@
             transform: 'translate(250,250)'
         });
 
-    function getConfig() {
-        var n1 = outCandidates[parseInt(Math.random() * outCandidates.length)];
-        var n2Candidates = [];
-        candidates.forEach(function (t) {
-            if (t < n1) {
-                n2Candidates.push(t);
-            }
-        });
-        var n2 = n2Candidates[parseInt(Math.random() * n2Candidates.length)];
-        var ratio = parseFloat(Math.random().toFixed(1));
-        if (ratio === 0) {
-            ratio += 0.1;
-        }
-        return {
-            n1: n1,
-            n2: n2,
-            ratio: ratio
-        }
-    }
-
-    function setController() {
+    function setController(n1, n2, ratio) {
         var control = controller.append('div').attr('id', 'control' + index);
-        var config = getConfig();
         layer.append('path')
             .attr('id', 'path' + index);
         control.append('label')
@@ -100,13 +96,13 @@
             .append('input')
             .attr('type', 'number')
             .attr('class', 'n1')
-            .attr('value', config.n1);
+            .attr('value', n1);
         control.append('label')
             .html('内齿轮齿数：')
             .append('input')
             .attr('type', 'number')
             .attr('class', 'n2')
-            .attr('value', config.n2);
+            .attr('value', n2);
         control.append('label')
             .html('颜色：')
             .append('input')
@@ -119,7 +115,7 @@
             .attr('class', 'ratio')
             .attr('type', 'number')
             .attr('step', '0.1')
-            .attr('value', config.ratio);
+            .attr('value', ratio);
         control.append('button')
             .attr('index', index)
             .on('click', function () {
@@ -145,7 +141,7 @@
                 layer.select('#path' + index)
                     .style('visibility', 'hidden');
             });
-        addCurve(config.n1, config.n2, config.ratio, '#4983B2', index);
+        addCurve(n1, n2, ratio, '#4983B2', index);
         index += 1;
     }
 
