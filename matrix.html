@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="js/d3.v4.js"></script>
+    <script src="js/d3.multi.selection.js"></script>
+    <script src="map/map.js"></script>
+    <script src="data/mapData.js"></script>
+    <style>
+        svg {
+            width: 5000px;
+            height: 5000px;
+        }
+
+        line {
+            fill: none;
+            stroke: black;
+            stroke-width: 1px;
+        }
+
+        rect {
+            fill: steelblue;
+        }
+
+        .init {
+            fill: grey
+        }
+
+        .selected {
+            fill: red
+        }
+
+        .disabled {
+            fill: black
+        }
+    </style>
+</head>
+<body>
+
+<svg></svg>
+
+<script>
+
+    var svg = d3.select('svg');
+
+    var width = 1000;
+    var height = 1000;
+    var number = 100;
+
+    var g = svg.append('g')
+        .attr('transform', 'translate(130,30)');
+
+    var x = d3.scaleLinear()
+        .domain([0, number])
+        .range([0, width]);
+
+    var y = d3.scaleLinear()
+        .domain([0, number])
+        .range([0, height]);
+
+    var xAxis = d3.axisTop(x).ticks(20);
+    var yAxis = d3.axisLeft(y).ticks(20);
+    var yAxis2 = d3.axisRight(y).ticks(20);
+
+    var xAxisG = g.append("g")
+        .attr("class", "axis")
+        .call(xAxis)
+        .attr("transform","translate(0,0)")
+        .append("text")
+        .attr("transform","translate(0,0)");
+
+    var yAxisG = g.append("g")
+        .attr("class", "axis")
+        .call(yAxis)
+        .attr("transform","translate(0,0)")
+        .append("text")
+        .attr("transform","translate(0,0)");
+
+    var yAxisG2 = g.append("g")
+        .attr("class", "axis")
+        .call(yAxis2)
+        .attr("transform","translate(" + width + ",0)")
+        .append("text")
+        .attr("transform","translate(0,0)");
+
+    for (var i = 0; i < 100; i++) {
+        g.append('line')
+            .attrs({
+                x1: x(i + 1),
+                y1: y(0),
+                x2: x(i + 1),
+                y2: y(100)
+            });
+        g.append('line')
+            .attrs({
+                x1: x(0),
+                y1: y(i + 1),
+                x2: x(100),
+                y2: y(i + 1)
+            });
+    }
+
+    edges.forEach(function (edge) {
+        g.append('rect')
+            .attrs({
+                x: x(edge.source),
+                y: y(edge.target),
+                width: width / number,
+                height: height / number
+            });
+    });
+
+    var nodeMap = new Map(edges);
+
+    var leftNodes = [];
+    var rightNodes = [];
+
+    for (var i = 0; i < 100; i++) {
+        leftNodes.push({
+            id: i,
+            status: 'init',
+            type: 'left'
+        });
+        rightNodes.push({
+            id: i,
+            status: 'init',
+            type: 'right'
+        });
+    }
+
+    var leftG = g.append('g').attr('transform', 'translate(-50,0)');
+    var rightG = g.append('g').attr('transform', 'translate(1050,0)');
+
+    function drawNodes() {
+        leftG.selectAll('*').remove();
+        rightG.selectAll('*').remove();
+
+        var leftCount = 0;
+        var rightCount = 0;
+
+        leftG
+            .selectAll('whatever')
+            .data(leftNodes)
+            .enter()
+            .append('circle')
+            .attrs({
+                class: function (d) {
+                    if (d.status === 'selected') {
+                        leftCount += 1;
+                    }
+                    return 'node left-node ' + d.status
+                },
+                cx: x(0) + 5,
+                cy: function (d) {
+                    return y(d.id) + 5;
+                },
+                r: 5
+            })
+            .on('click', nodeClickHandler)
+            .on('mouseover', mouseover)
+            .on('mouseout', mouseout);
+
+        rightG
+            .selectAll('whatever')
+            .data(rightNodes)
+            .enter()
+            .append('circle')
+            .attrs({
+                class: function (d) {
+                    if (d.status === 'selected') {
+                        rightCount += 1;
+                    }
+                    return 'node right-node ' + d.status
+                },
+                cx: x(0) + 5,
+                cy: function (d) {
+                    return y(d.id) + 5;
+                },
+                r: 5
+            })
+            .on('click', nodeClickHandler)
+            .on('mouseover', mouseover)
+            .on('mouseout', mouseout);
+
+        leftG.append('text')
+            .attrs({
+                x: -60,
+                y: 0
+            })
+            .html('总数： ' + leftCount);
+
+        rightG.append('text')
+            .attrs({
+                x: 10,
+                y: 0
+            })
+            .html('总数： ' + rightCount);
+    }
+
+    function nodeClickHandler(d) {
+        if (d.status === 'init') {
+            var selected = [d.id].concat(nodeMap.getNodeTargets(d.id));
+            var addList, removeList;
+            if (d.type === 'left') {
+                addList = leftNodes;
+                removeList = rightNodes;
+            } else {
+                addList = rightNodes;
+                removeList = leftNodes;
+            }
+
+            selected.forEach(function (id) {
+                addList[id].status = 'selected';
+                removeList[id].status = 'disabled';
+            });
+
+            drawNodes();
+        }
+    }
+
+    function mouseover() {
+        d3.select(this).attr('r', 10);
+    }
+
+    function mouseout() {
+        d3.select(this).attr('r', 5)
+    }
+
+    drawNodes();
+</script>
+
+</body>
+</html>

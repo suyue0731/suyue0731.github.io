@@ -1,3 +1,8 @@
 <component name="ProjectDictionaryState">
-  <dictionary name="suyue" />
+  <dictionary name="suyue">
+    <words>
+      <w>mouseout</w>
+      <w>mouseover</w>
+    </words>
+  </dictionary>
 </component>
