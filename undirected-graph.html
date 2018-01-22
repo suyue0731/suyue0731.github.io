@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>undirected graph</title>
+    <script src="js/d3.v4.js"></script>
+    <script src="js/d3.multi.selection.js"></script>
+    <style>
+        svg {
+            margin-top: 20px;
+            width: 500px;
+            height: 600px;
+        }
+
+        .domain {
+            stroke: black;
+        }
+
+        .tick {
+            stroke: black;
+        }
+
+        line {
+            fill: none;
+            stroke: black;
+            stroke-width: 1px;
+        }
+
+        circle {
+            fill: red;
+        }
+
+        .edge {
+            fill: none;
+            stroke: red;
+            stroke-width: 1px;
+        }
+
+        .arrow {
+            fill: steelblue
+        }
+
+        .answer-node {
+            fill: blue;
+        }
+
+        .answer-edge {
+            fill: none;
+            stroke: blue;
+            stroke-width: 1px;
+        }
+
+        .answer-layer {
+            visibility: hidden;
+        }
+
+        .answer-button {
+            font-size: 30px;
+            fill: black;
+        }
+
+        input {
+            position: absolute;
+            left: 10px;
+        }
+
+    </style>
+</head>
+<body>
+<input type="file" accept="application/json">
+<svg></svg>
+<script>
+
+    var dataPath = './src/data/sample.json';
+
+    var svg = d3.select('svg');
+
+    var width = 900;
+    var height = 900;
+    var number = 9;
+
+    var currentIndex = 0;
+    var mapLength;
+
+    var g = svg.append('g')
+        .attr('transform', 'translate(20, -30)');
+
+    var x = d3.scaleLinear()
+        .domain([1, number])
+        .range([50, width / 2]);
+
+    var y = d3.scaleLinear()
+        .domain([1, number])
+        .range([height / 2 - 50, 0]);
+
+    var xAxis = d3.axisBottom(x).ticks(9);
+    var yAxis = d3.axisLeft(y).ticks(9);
+
+    var widthShift = width / 2 / number;
+    var heightShift = height / 2 / number;
+
+    var maps;
+
+    var nodeLayer = g.append('g').attr('class', 'node-layer');
+    var edgeLayer = g.append('g').attr('class', 'edge-layer');
+    var answerLayer = g.append('g').attr('class', 'answer-layer');
+
+    var xAxisG = g.append("g")
+        .attr("class", "axis")
+        .call(xAxis)
+        .attr("transform","translate(" + (-widthShift) + "," + (width / 2) + ")")
+        .append("text")
+        .attr("transform","translate(0,0)");
+
+    var yAxisG = g.append("g")
+        .attr("class", "axis")
+        .call(yAxis)
+        .attr("transform","translate(0," + (heightShift) + ")")
+        .append("text")
+        .attr("transform","translate(0,0)");
+
+    for (var i = 0; i < number - 1; i++) {
+        g.append('line')
+            .attrs({
+                x1: x(i + 1),
+                y1: y(0),
+                x2: x(i + 1),
+                y2: y(number - 1)
+            });
+        g.append('line')
+            .attrs({
+                x1: x(0),
+                y1: y(i + 1),
+                x2: x(number - 1),
+                y2: y(i + 1)
+            });
+    }
+
+    function leftClick() {
+        if (currentIndex - 1 >= 0 ) {
+            currentIndex -= 1;
+        } else {
+            currentIndex = mapLength - 1;
+        }
+
+        d3.select('.map-index').html(currentIndex);
+        render(maps[currentIndex]);
+    }
+
+    function rightClick() {
+        if (currentIndex + 1 <= mapLength - 1 ) {
+            currentIndex += 1;
+        } else {
+            currentIndex = 0;
+        }
+
+        d3.select('.map-index').html(currentIndex);
+        render(maps[currentIndex]);
+    }
+
+    function showAnswer() {
+        answerLayer.style('visibility', 'visible');
+    }
+
+    function hideAnswer() {
+        answerLayer.style('visibility', 'hidden');
+    }
+
+    function initController() {
+        var controllerLayer = g.append('g').attr('class', 'controller-layer')
+            .attr('transform', 'translate(' + x(4) + ',' + y(-1) +')');
+
+        var leftArrow = controllerLayer.append('path')
+            .attr('class', 'arrow')
+            .attr('transform', 'translate(-30,0)')
+            .attr('d', function () {
+                return 'M0,0L-20,10L0,20'
+            })
+            .on('click', leftClick);
+        var rightArrow = controllerLayer.append('path')
+            .attr('class', 'arrow')
+            .attr('transform', 'translate(30,0)')
+            .attr('d', function () {
+                return 'M0,0L20,10L0,20'
+            })
+            .on('click', rightClick);
+
+        var answerButton = controllerLayer.append('text')
+            .attr('class', 'answer-button')
+            .attr('transform', 'translate(-60, 50)')
+            .on('mouseover', showAnswer)
+            .on('mouseout', hideAnswer)
+            .html('查看答案');
+
+        var currentIndexText = controllerLayer.append('text')
+            .attr('class', 'map-index')
+            .attrs({
+                x: -5,
+                y: 15
+            })
+            .html(currentIndex);
+
+    }
+
+    initController();
+
+    function render(map) {
+        console.log(map);
+        var nodes = map.nodes;
+        var edges = map.edges;
+        var answer = map.answer;
+
+        nodeLayer.selectAll('*').remove();
+        edgeLayer.selectAll('*').remove();
+        answerLayer.selectAll('*').remove();
+
+        var answerOrders = answer.split('-');
+        var answerEdges = [];
+        for (var i = 0; i < answerOrders.length - 1; i++) {
+            answerEdges.push({
+                sourceId: parseInt(answerOrders[i]),
+                targetId: parseInt(answerOrders[i + 1])
+            });
+        }
+
+        nodeLayer.selectAll('whatever')
+            .data(nodes)
+            .enter()
+            .append('circle')
+            .attr('class', 'node')
+            .each(function (d) {
+                d3.select(this)
+                    .attrs({
+                        cx: x(d.x - 1),
+                        cy: y(d.y - 1),
+                        r: 3
+                    });
+            });
+        answerLayer.selectAll('whatever')
+            .data(nodes)
+            .enter()
+            .append('circle')
+            .attr('class', 'answer-node')
+            .each(function (d) {
+                d3.select(this)
+                    .attrs({
+                        cx: x(d.x - 1),
+                        cy: y(d.y - 1),
+                        r: 3
+                    });
+            });
+        edgeLayer.selectAll('whatever')
+            .data(edges)
+            .enter()
+            .append('line')
+            .attr('class', 'edge')
+            .each(function (d) {
+                var source = nodes.find(function (node) {
+                    return parseInt(node.id) === parseInt(d.sourceId);
+                });
+                var target = nodes.find(function (node) {
+                    return parseInt(node.id) === parseInt(d.targetId);
+                });
+                d3.select(this)
+                    .attrs({
+                        x1: x(source.x - 1),
+                        y1: y(source.y - 1),
+                        x2: x(target.x - 1),
+                        y2: y(target.y - 1)
+                    });
+            });
+        answerLayer.selectAll('whatever')
+            .data(answerEdges)
+            .enter()
+            .append('line')
+            .attr('class', 'answer-edge')
+            .each(function (d) {
+                var source = nodes.find(function (node) {
+                    return parseInt(node.id) === parseInt(d.sourceId);
+                });
+                var target = nodes.find(function (node) {
+                    return parseInt(node.id) === parseInt(d.targetId);
+                });
+                d3.select(this)
+                    .attrs({
+                        x1: x(source.x - 1),
+                        y1: y(source.y - 1),
+                        x2: x(target.x - 1),
+                        y2: y(target.y - 1)
+                    });
+            });
+
+        edges.forEach(function (edge) {
+            var source = nodes.find(function (node) {
+                return parseInt(node.id) === parseInt(edge.source);
+            });
+            var target = nodes.find(function (node) {
+                return parseInt(node.id) === parseInt(edge.target);
+            });
+        });
+    }
+
+    document.onkeydown = function (event) {
+        if (event.keyCode === 37) {
+            leftClick();
+        }
+        if (event.keyCode === 39) {
+            rightClick();
+        }
+    };
+
+    document.onkeypress = function (event) {
+        if (event.keyCode === 32) {
+            showAnswer();
+        }
+    };
+
+    document.onkeyup = function () {
+        hideAnswer();
+    };
+
+    d3.select('input')
+        .on('change', function () {
+            console.log(this.files);
+
+            var fileObject = this.files[0];
+
+            var file = this.files[0];
+
+            var success = function ( content ) {
+                maps = JSON.parse(content).maps;
+                mapLength = maps.length;
+                console.log(maps);
+
+                //render first map
+                var map = maps[currentIndex];
+                render(map);
+            };
+
+            var fileReader = new FileReader( );
+            fileReader.onload = function ( evt ) { success( evt.target.result ) };
+            fileReader.readAsText( file );
+
+
+        })
+
+</script>
+</body>
+</html>

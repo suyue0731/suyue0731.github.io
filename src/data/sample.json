@@ -1,0 +1,114 @@
+{
+  "maps": [
+    {
+      "nodes": [
+        {
+          "id": 0,
+          "name": "t",
+          "x": 1,
+          "y": 1
+        },
+        {
+          "id": 1,
+          "name": "e",
+          "x": 3,
+          "y": 5
+        },
+        {
+          "id": 2,
+          "name": "s",
+          "x": 4,
+          "y": 6
+        },
+        {
+          "id": 3,
+          "name": "t",
+          "x": 2,
+          "y": 2
+        }
+      ],
+      "edges": [
+        {
+          "sourceId": 0,
+          "targetId": 1
+        },
+        {
+          "sourceId": 0,
+          "targetId": 2
+        },
+        {
+          "sourceId": 0,
+          "targetId": 3
+        },
+        {
+          "sourceId": 1,
+          "targetId": 2
+        },
+        {
+          "sourceId": 1,
+          "targetId": 3
+        },
+        {
+          "sourceId": 2,
+          "targetId": 3
+        }
+      ],
+      "answer": "0-1-2-3"
+    },
+    {
+      "nodes": [
+        {
+          "id": 0,
+          "name": "t",
+          "x": 1,
+          "y": 9
+        },
+        {
+          "id": 1,
+          "name": "e",
+          "x": 3,
+          "y": 8
+        },
+        {
+          "id": 2,
+          "name": "s",
+          "x": 4,
+          "y": 1
+        },
+        {
+          "id": 3,
+          "name": "t",
+          "x": 2,
+          "y": 8
+        }
+      ],
+      "edges": [
+        {
+          "sourceId": 0,
+          "targetId": 1
+        },
+        {
+          "sourceId": 0,
+          "targetId": 2
+        },
+        {
+          "sourceId": 0,
+          "targetId": 3
+        },
+        {
+          "sourceId": 1,
+          "targetId": 2
+        },
+        {
+          "sourceId": 1,
+          "targetId": 3
+        },
+        {
+          "sourceId": 2,
+          "targetId": 3
+        }
+      ],
+      "answer": "0-1-2-3"
+    }
+  ]
+}

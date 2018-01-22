@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="js/d3.v4.js"></script>
+    <script src="js/d3.multi.selection.js"></script>
+    <script src="js/d3-3d.js"></script>
+    <script src="data/mapData.js"></script>
+    <style>
+        svg {
+            width: 1000px;
+            height: 1000px;
+        }
+
+        .node {
+            fill: steelblue;
+        }
+
+        .edge {
+            stroke: grey;
+            stroke-width: 1px;
+        }
+    </style>
+</head>
+<body>
+<svg></svg>
+
+<script>
+
+    var svg = d3.select('svg');
+
+    var g = svg.append('g')
+        .attr('transform', 'translate(360,360)');
+
+    var r = 350;
+    var pi = Math.PI;
+    var sin = Math.sin;
+    var cos = Math.cos;
+
+
+
+    var edgeDic = {}
+    edges.forEach(function (edge) {
+        if (!edgeDic[edge.target + '-' + edge.source]) {
+            edgeDic[edge.source + '-' + edge.target] = edge;
+        }
+    });
+
+    edges = [];
+    for (var key in edgeDic) {
+        edges.push(edgeDic[key]);
+    }
+
+    function getNodeDegreeDic(edges) {
+        var dic = {};
+        edges.forEach(function (edge) {
+            if (!dic[edge.source]) {
+                dic[edge.source] = 0;
+            }
+            if (!dic[edge.target]) {
+                dic[edge.target] = 0;
+            }
+            dic[edge.source] += 1;
+            dic[edge.target] += 1;
+        });
+        return dic;
+    }
+
+    var nodeDegreeDic = getNodeDegreeDic(edges);
+
+    console.log(nodeDegreeDic);
+
+    var nodes = [];
+
+    for (var i = 0; i < 100; i++) {
+        nodes.push({
+            r: 7,
+            degree: nodeDegreeDic[i],
+            id: i
+        });
+    }
+
+
+
+    nodes = nodes.sort(function (node1, node2) {
+        return d3.ascending(node1.degree, node2.degree);
+    });
+
+    for (var i = 0; i < 100; i++) {
+        nodes[i].x = r * cos(i / 100 * 2 * pi);
+        nodes[i].y = r * sin(i / 100 * 2 * pi);
+    }
+
+    var nodeDic = {};
+    nodes.forEach(function (node) {
+        nodeDic[node.id] = node;
+    });
+
+    console.log(nodeDic);
+
+    g.selectAll('node')
+        .data(nodes)
+        .enter()
+        .append('circle')
+        .attrs({
+            class: 'node',
+            cx: function (d) {
+                return d.x;
+            },
+            cy: function (d) {
+                return d.y;
+            },
+            r: function (d) {
+                return d.r;
+            }
+        });
+
+    g.selectAll('edge')
+        .data(edges)
+        .enter()
+        .append('line')
+        .each(function (d) {
+            d3.select(this)
+                .attrs({
+                    class: 'edge',
+                    x1: nodeDic[d.source].x,
+                    y1: nodeDic[d.source].y,
+                    x2: nodeDic[d.target].x,
+                    y2: nodeDic[d.target].y
+                });
+        });
+
+
+</script>
+
+</body>
+</html>

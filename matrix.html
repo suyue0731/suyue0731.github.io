@@ -113,21 +113,26 @@
 
     var nodeMap = new Map(edges);
 
-    var leftNodes = [];
-    var rightNodes = [];
+    var leftNodes;
+    var rightNodes;
 
-    for (var i = 0; i < 100; i++) {
-        leftNodes.push({
-            id: i,
-            status: 'init',
-            type: 'left'
-        });
-        rightNodes.push({
-            id: i,
-            status: 'init',
-            type: 'right'
-        });
+    function init() {
+        leftNodes = [];
+        rightNodes = [];
+        for (var i = 0; i < 100; i++) {
+            leftNodes.push({
+                id: i,
+                status: 'init',
+                type: 'left'
+            });
+            rightNodes.push({
+                id: i,
+                status: 'init',
+                type: 'right'
+            });
+        }
     }
+    init();
 
     var leftG = g.append('g').attr('transform', 'translate(-50,0)');
     var rightG = g.append('g').attr('transform', 'translate(1050,0)');
@@ -228,6 +233,147 @@
     }
 
     drawNodes();
+
+    function getNodesByStatus(nodes, status) {
+        var newNodes = [];
+        nodes.forEach(function (node) {
+            if (node.status === status) {
+                newNodes.push(node);
+            }
+        });
+        return newNodes;
+    }
+
+    function getIntersectCount(list1, list2) {
+        var set = d3.set();
+        list1.forEach(function (num) {
+            set.add(num);
+        });
+        list2.forEach(function (num) {
+            set.add(num);
+        });
+        return list1.length + list2.length - set.size();
+    }
+
+    function getByMaxDamage(nodes) {
+        var maxDamage = 0;
+        var candidate = [];
+        var enemySelectedNodeIds = getNodesByStatus(leftNodes, 'disabled').map(function (node) {
+            return node.id;
+        });
+        nodes.forEach(function (node) {
+            var selected = [node.id].concat(nodeMap.getNodeTargets(node.id));
+            var damage = getIntersectCount(selected, enemySelectedNodeIds);
+            if (maxDamage < damage) {
+                maxDamage = damage;
+                candidate = [node];
+            } else if (maxDamage === damage) {
+                candidate.push(node);
+            }
+        });
+        return getByRandom(candidate);
+    }
+
+    function getByMaxNeighbors(nodes) {
+        var maxCount = 0;
+        var candidate = [];
+
+        getNodesByStatus(nodes, 'init').forEach(function (node) {
+            var selected = [node.id].concat(nodeMap.getNodeTargets(node.id));
+            if (maxCount < selected.length) {
+                maxCount = selected.length;
+                candidate = [node];
+            } else if (maxCount === selected.length) {
+                candidate.push(node);
+            }
+        });
+
+        return getByMaxDamage(candidate);
+    }
+
+    function getByMaxNeighbors_old(nodes) {
+        var maxCount = 0;
+        var candidate = [];
+
+        getNodesByStatus(nodes, 'init').forEach(function (node) {
+            var selected = [node.id].concat(nodeMap.getNodeTargets(node.id));
+            if (maxCount < selected.length) {
+                maxCount = selected.length;
+                candidate = [node];
+            } else if (maxCount === selected.length) {
+                candidate.push(node);
+            }
+        });
+
+        return getByRandom(candidate);
+    }
+
+    function getByRandom(nodes) {
+        var newNodes = [];
+        nodes.forEach(function (node) {
+            if (node.status === 'init') {
+                newNodes.push(node);
+            }
+        });
+        if (newNodes.length === 0) {
+            return null;
+        }
+        return newNodes[parseInt(Math.random() * newNodes.length)].id;
+    }
+
+    function selectNode(id, type) {
+        var selected = [id].concat(nodeMap.getNodeTargets(id));
+        var addList, removeList;
+        if (type === 'left') {
+            addList = leftNodes;
+            removeList = rightNodes;
+        } else {
+            addList = rightNodes;
+            removeList = leftNodes;
+        }
+
+        selected.forEach(function (id) {
+            addList[id].status = 'selected';
+            removeList[id].status = 'disabled';
+        });
+    }
+
+    function countSelected(nodes) {
+        var count = 0;
+        nodes.forEach(function (node) {
+            if (node.status === 'selected') {
+                count += 1;
+            }
+        });
+        return count;
+    }
+
+    function test(number) {
+        var leftWinCount = 0;
+        for (var k = 0; k < number; k++) {
+            var count = 10;
+
+            for (var i = 0;i < count; i++) {
+                var leftSelectNodeId = getByMaxNeighbors(leftNodes);
+                if (leftSelectNodeId) {
+                    selectNode(leftSelectNodeId, 'left');
+                }
+                var rightSelectNodeId = getByMaxNeighbors_old(rightNodes);
+                if (rightSelectNodeId) {
+                    selectNode(rightSelectNodeId, 'right');
+                }
+            }
+            var leftCount = countSelected(leftNodes);
+            var rightCount = countSelected(rightNodes);
+            if (leftCount > rightCount) {
+                leftWinCount += 1;
+            }
+            init();
+        }
+        console.log('left win rate: ' + (leftWinCount / number).toFixed(10));
+    }
+
+    test(1000);
 </script>
 
 </body>
