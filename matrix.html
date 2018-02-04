@@ -14,17 +14,19 @@
         }
         input {
             position: absolute;
-            right: -40px;
-            top: 50px;
+            left: 0;
+            top: 0;
         }
         .container {
-            position: fixed;
-            width: 100%;
-            height: 100%;
+            /*position: fixed;*/
+            /*width: 100%;*/
+            /*height: 100%;*/
         }
         svg {
-            width: 100%;
-            height: 100%;
+            /*width: 100%;*/
+            /*height: 100%;*/
+            width: 3000px;
+            height: 3000px;
         }
 
         .axis path {
@@ -74,7 +76,7 @@
         || document.documentElement.clientHeight
         || window.innerHeight;
 
-    var size = maxHeight - 50;
+    var size = 2400;
     var width = size;
     var height = size;
     var number = 180;
@@ -92,7 +94,7 @@
     var shift = 50;
 
     var g = svg.append('g')
-        .attr('transform', 'translate(130,30)');
+        .attr('transform', 'translate(30,60)');
 
     var leftG = g.append('g').attr('transform', 'translate(-' + shift + ',0)');
     var rightG = g.append('g').attr('transform', 'translate(' + (width + shift) + ',0)');
@@ -210,7 +212,7 @@
                 cy: function (d) {
                     return y(d.id) + size / number / 2;
                 },
-                r: 2
+                r: 4
             })
             .on('click', nodeClickHandler)
             .on('mouseover', mouseover)
@@ -232,7 +234,7 @@
                 cy: function (d) {
                     return y(d.id) + size / number / 2;
                 },
-                r: 2
+                r: 4
             })
             .on('click', nodeClickHandler)
             .on('mouseover', mouseover)
@@ -240,15 +242,15 @@
 
         leftG.append('text')
             .attrs({
-                x: -60,
-                y: 0
+                x: 20,
+                y: -20
             })
             .html('总数： ' + leftCount);
 
         rightG.append('text')
             .attrs({
-                x: 10,
-                y: 0
+                x: -110,
+                y: -20
             })
             .html('总数： ' + rightCount);
     }
@@ -346,7 +348,7 @@
 
     function initController() {
         var controllerLayer = g.append('g').attr('class', 'controller-layer')
-            .attr('transform', 'translate(' + x(number * 1.3) + ',' + y(number / 2) +')');
+            .attr('transform', 'translate(' + 600 + ',' + -60 +')');
 
         var leftArrow = controllerLayer.append('path')
             .attr('class', 'arrow')
@@ -386,10 +388,11 @@
         }
     };
     document.onkeydown = function (event) {
-        if (event.keyCode === 37) {
+        console.log(event);
+        if (event.key === 'p') {
             leftClick();
         }
-        if (event.keyCode === 39) {
+        if (event.key === 'n') {
             rightClick();
         }
     };
