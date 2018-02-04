@@ -6,29 +6,51 @@
     <script src="js/d3.v4.js"></script>
     <script src="js/d3.multi.selection.js"></script>
     <script src="map/map.js"></script>
-    <script src="data/mapData.js"></script>
+    <!--<script src="data/mapData.js"></script>-->
     <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+        input {
+            position: absolute;
+            right: -40px;
+            top: 50px;
+        }
+        .container {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+        }
         svg {
-            width: 5000px;
-            height: 5000px;
+            width: 100%;
+            height: 100%;
+        }
+
+        .axis path {
+            stroke: lightgrey;
         }
 
         line {
             fill: none;
-            stroke: black;
+            stroke: lightgrey;
             stroke-width: 1px;
         }
 
         rect {
-            fill: steelblue;
+            fill: blue;
+        }
+
+        .extra {
+            visibility: hidden;
         }
 
         .init {
-            fill: grey
+            fill: lightgrey
         }
 
         .selected {
-            fill: red
+            fill: blue
         }
 
         .disabled {
@@ -38,18 +60,42 @@
 </head>
 <body>
 
-<svg></svg>
+<div class="container">
+    <input type="file" accept="application/json">
+    <svg></svg>
+</div>
+
 
 <script>
 
     var svg = d3.select('svg');
 
-    var width = 1000;
-    var height = 1000;
-    var number = 100;
+    var maxHeight = document.body.clientHeight
+        || document.documentElement.clientHeight
+        || window.innerHeight;
+
+    var size = maxHeight - 50;
+    var width = size;
+    var height = size;
+    var number = 180;
+
+    var matrices;
+    var edges;
+    var extraEdges;
+    var currentIndex;
+    var nodeMap;
+    var matrixLength;
+
+    var leftNodes;
+    var rightNodes;
+
+    var shift = 50;
 
     var g = svg.append('g')
         .attr('transform', 'translate(130,30)');
+
+    var leftG = g.append('g').attr('transform', 'translate(-' + shift + ',0)');
+    var rightG = g.append('g').attr('transform', 'translate(' + (width + shift) + ',0)');
 
     var x = d3.scaleLinear()
         .domain([0, number])
@@ -84,42 +130,27 @@
         .append("text")
         .attr("transform","translate(0,0)");
 
-    for (var i = 0; i < 100; i++) {
+    for (var i = 0; i < number; i++) {
         g.append('line')
             .attrs({
                 x1: x(i + 1),
                 y1: y(0),
                 x2: x(i + 1),
-                y2: y(100)
+                y2: y(number)
             });
         g.append('line')
             .attrs({
                 x1: x(0),
                 y1: y(i + 1),
-                x2: x(100),
+                x2: x(number),
                 y2: y(i + 1)
             });
     }
 
-    edges.forEach(function (edge) {
-        g.append('rect')
-            .attrs({
-                x: x(edge.source),
-                y: y(edge.target),
-                width: width / number,
-                height: height / number
-            });
-    });
-
-    var nodeMap = new Map(edges);
-
-    var leftNodes;
-    var rightNodes;
-
     function init() {
         leftNodes = [];
         rightNodes = [];
-        for (var i = 0; i < 100; i++) {
+        for (var i = 0; i < number; i++) {
             leftNodes.push({
                 id: i,
                 status: 'init',
@@ -132,10 +163,29 @@
             });
         }
     }
-    init();
 
-    var leftG = g.append('g').attr('transform', 'translate(-50,0)');
-    var rightG = g.append('g').attr('transform', 'translate(1050,0)');
+    function drawEdges() {
+        g.selectAll('rect').remove();
+        edges.forEach(function (edge) {
+            g.append('rect')
+                .attrs({
+                    x: x(edge.source),
+                    y: y(edge.target),
+                    width: width / number,
+                    height: height / number
+                });
+        });
+        extraEdges.forEach(function (edge) {
+            g.append('rect')
+                .attrs({
+                    class: 'extra',
+                    x: x(edge.source),
+                    y: y(edge.target),
+                    width: width / number,
+                    height: height / number
+                });
+        });
+    }
 
     function drawNodes() {
         leftG.selectAll('*').remove();
@@ -156,11 +206,11 @@
                     }
                     return 'node left-node ' + d.status
                 },
-                cx: x(0) + 5,
+                cx: x(0) - 5 + shift,
                 cy: function (d) {
-                    return y(d.id) + 5;
+                    return y(d.id) + size / number / 2;
                 },
-                r: 5
+                r: 2
             })
             .on('click', nodeClickHandler)
             .on('mouseover', mouseover)
@@ -178,11 +228,11 @@
                     }
                     return 'node right-node ' + d.status
                 },
-                cx: x(0) + 5,
+                cx: x(0) + 5 - shift,
                 cy: function (d) {
-                    return y(d.id) + 5;
+                    return y(d.id) + size / number / 2;
                 },
-                r: 5
+                r: 2
             })
             .on('click', nodeClickHandler)
             .on('mouseover', mouseover)
@@ -229,151 +279,121 @@
     }
 
     function mouseout() {
-        d3.select(this).attr('r', 5)
+        d3.select(this).attr('r', 2)
     }
 
-    drawNodes();
+//    init();
+//    drawEdges();
+//    drawNodes();
 
-    function getNodesByStatus(nodes, status) {
-        var newNodes = [];
-        nodes.forEach(function (node) {
-            if (node.status === status) {
-                newNodes.push(node);
-            }
+    d3.select('input')
+        .on('change', function () {
+            console.log(this.files);
+
+            var fileObject = this.files[0];
+
+            var file = this.files[0];
+
+            var success = function (content) {
+                matrices = JSON.parse(content).matrices;
+                matrixLength = matrices.length;
+                console.log(matrices);
+
+                //render first map
+                render(0);
+                initController();
+            };
+
+            var fileReader = new FileReader();
+            fileReader.onload = function (evt) {success(evt.target.result)};
+            fileReader.readAsText(file);
+
+            this.blur();
         });
-        return newNodes;
+
+    function render(index) {
+        edges = matrices[index].matrixEdges;
+        extraEdges = matrices[index].extraEdges;
+        nodeMap = new Map(edges.concat(extraEdges));
+        currentIndex = index;
+
+        init();
+        drawEdges();
+        drawNodes();
     }
 
-    function getIntersectCount(list1, list2) {
-        var set = d3.set();
-        list1.forEach(function (num) {
-            set.add(num);
-        });
-        list2.forEach(function (num) {
-            set.add(num);
-        });
-        return list1.length + list2.length - set.size();
-    }
-
-    function getByMaxDamage(nodes) {
-        var maxDamage = 0;
-        var candidate = [];
-        var enemySelectedNodeIds = getNodesByStatus(leftNodes, 'disabled').map(function (node) {
-            return node.id;
-        });
-        nodes.forEach(function (node) {
-            var selected = [node.id].concat(nodeMap.getNodeTargets(node.id));
-            var damage = getIntersectCount(selected, enemySelectedNodeIds);
-            if (maxDamage < damage) {
-                maxDamage = damage;
-                candidate = [node];
-            } else if (maxDamage === damage) {
-                candidate.push(node);
-            }
-        });
-        return getByRandom(candidate);
-    }
-
-    function getByMaxNeighbors(nodes) {
-        var maxCount = 0;
-        var candidate = [];
-
-        getNodesByStatus(nodes, 'init').forEach(function (node) {
-            var selected = [node.id].concat(nodeMap.getNodeTargets(node.id));
-            if (maxCount < selected.length) {
-                maxCount = selected.length;
-                candidate = [node];
-            } else if (maxCount === selected.length) {
-                candidate.push(node);
-            }
-        });
-
-        return getByMaxDamage(candidate);
-    }
-
-    function getByMaxNeighbors_old(nodes) {
-        var maxCount = 0;
-        var candidate = [];
-
-        getNodesByStatus(nodes, 'init').forEach(function (node) {
-            var selected = [node.id].concat(nodeMap.getNodeTargets(node.id));
-            if (maxCount < selected.length) {
-                maxCount = selected.length;
-                candidate = [node];
-            } else if (maxCount === selected.length) {
-                candidate.push(node);
-            }
-        });
-
-        return getByRandom(candidate);
-    }
-
-    function getByRandom(nodes) {
-        var newNodes = [];
-        nodes.forEach(function (node) {
-            if (node.status === 'init') {
-                newNodes.push(node);
-            }
-        });
-        if (newNodes.length === 0) {
-            return null;
-        }
-        return newNodes[parseInt(Math.random() * newNodes.length)].id;
-    }
-
-    function selectNode(id, type) {
-        var selected = [id].concat(nodeMap.getNodeTargets(id));
-        var addList, removeList;
-        if (type === 'left') {
-            addList = leftNodes;
-            removeList = rightNodes;
+    function leftClick() {
+        if (currentIndex - 1 >= 0 ) {
+            currentIndex -= 1;
         } else {
-            addList = rightNodes;
-            removeList = leftNodes;
+            currentIndex = matrixLength - 1;
         }
 
-        selected.forEach(function (id) {
-            addList[id].status = 'selected';
-            removeList[id].status = 'disabled';
-        });
+        d3.select('.map-index').html(currentIndex);
+        render(currentIndex);
     }
 
-    function countSelected(nodes) {
-        var count = 0;
-        nodes.forEach(function (node) {
-            if (node.status === 'selected') {
-                count += 1;
-            }
-        });
-        return count;
-    }
-
-    function test(number) {
-        var leftWinCount = 0;
-        for (var k = 0; k < number; k++) {
-            var count = 10;
-
-            for (var i = 0;i < count; i++) {
-                var leftSelectNodeId = getByMaxNeighbors(leftNodes);
-                if (leftSelectNodeId) {
-                    selectNode(leftSelectNodeId, 'left');
-                }
-                var rightSelectNodeId = getByMaxNeighbors_old(rightNodes);
-                if (rightSelectNodeId) {
-                    selectNode(rightSelectNodeId, 'right');
-                }
-            }
-            var leftCount = countSelected(leftNodes);
-            var rightCount = countSelected(rightNodes);
-            if (leftCount > rightCount) {
-                leftWinCount += 1;
-            }
-            init();
+    function rightClick() {
+        if (currentIndex + 1 <= matrixLength - 1 ) {
+            currentIndex += 1;
+        } else {
+            currentIndex = 0;
         }
-        console.log('left win rate: ' + (leftWinCount / number).toFixed(10));
+
+        d3.select('.map-index').html(currentIndex);
+        render(currentIndex);
     }
 
-    test(1000);
+    function initController() {
+        var controllerLayer = g.append('g').attr('class', 'controller-layer')
+            .attr('transform', 'translate(' + x(number * 1.3) + ',' + y(number / 2) +')');
+
+        var leftArrow = controllerLayer.append('path')
+            .attr('class', 'arrow')
+            .attr('transform', 'translate(-30,0)')
+            .attr('d', function () {
+                return 'M0,0L-20,10L0,20'
+            })
+            .on('click', leftClick);
+        var rightArrow = controllerLayer.append('path')
+            .attr('class', 'arrow')
+            .attr('transform', 'translate(30,0)')
+            .attr('d', function () {
+                return 'M0,0L20,10L0,20'
+            })
+            .on('click', rightClick);
+
+        var currentIndexText = controllerLayer.append('text')
+            .attr('class', 'map-index')
+            .attrs({
+                x: -5,
+                y: 15
+            })
+            .html(currentIndex);
+
+    }
+
+    document.onkeypress = function (event) {
+        if (event.keyCode === 32) {
+            g.selectAll('.extra')
+                .style('visibility', 'visible');
+        }
+    };
+    document.onkeyup = function () {
+        if (event.keyCode === 32) {
+            g.selectAll('.extra')
+                .style('visibility', 'hidden');
+        }
+    };
+    document.onkeydown = function (event) {
+        if (event.keyCode === 37) {
+            leftClick();
+        }
+        if (event.keyCode === 39) {
+            rightClick();
+        }
+    };
+
 </script>
 
 </body>
