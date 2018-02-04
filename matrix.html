@@ -408,10 +408,10 @@
     };
     document.onkeydown = function (event) {
         console.log(event);
-        if (event.key === 'p') {
+        if (event.keyCode === 37) {
             leftClick();
         }
-        if (event.key === 'n') {
+        if (event.keyCode === 39) {
             rightClick();
         }
     };
