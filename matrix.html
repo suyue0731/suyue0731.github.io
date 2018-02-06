@@ -190,8 +190,8 @@
         edges.forEach(function (edge) {
             g.append('rect')
                 .attrs({
-                    x: x(edge.source),
-                    y: y(edge.target),
+                    x: x(edge.sourceId),
+                    y: y(edge.targetId),
                     width: width / number,
                     height: height / number
                 });
@@ -200,8 +200,8 @@
             g.append('rect')
                 .attrs({
                     class: 'extra',
-                    x: x(edge.source),
-                    y: y(edge.target),
+                    x: x(edge.sourceId),
+                    y: y(edge.targetId),
                     width: width / number,
                     height: height / number
                 });
@@ -407,7 +407,6 @@
         }
     };
     document.onkeydown = function (event) {
-        console.log(event);
         if (event.keyCode === 37) {
             leftClick();
         }
