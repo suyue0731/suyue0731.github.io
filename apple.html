@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<video id="video" src="https://1253271207.vod2.myqcloud.com/2990a13dvodgzp1253271207/8452a8495285890780500164907/EiApQmbNY38A.mp4"></video>
+<div id="controls">
+    <button id="playButton">Play</button>
+    <button id="pauseButton" hidden>Pause</button>
+    <button id="PiPButton">PiP</button>
+</div>
+
+<script>
+    var pipButtonElement = document.getElementById('PiPButton');
+    var video = document.getElementById('video');
+    // Toggle PiP when the user clicks the button.
+    if (video.webkitSupportsPresentationMode && typeof video.webkitSetPresentationMode === "function") {
+        pipButtonElement.addEventListener("click", function(event) {
+            video.webkitSetPresentationMode(video.webkitPresentationMode === "picture-in-picture" ? "inline" : "picture-in-picture");
+        });
+    } else {
+        pipButtonElement.disabled = true;
+    }
+</script>
+</body>
+</html>
